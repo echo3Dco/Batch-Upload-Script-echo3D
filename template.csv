@@ -1,16 +1,9 @@
 target_type,2
-hologram_type,2
 url_image,
 file_image,
 text_geolocation,
 longitude,
 latitude,
 url_video,
-file_video,
-file_image_hologram,
-type,upload
-file_model,c:\Users\lawre\Downloads\Goat.glb
-source,
-url,
-name,
+asset_file,/Users/lawrence/Desktop/Goat.glb
 file_cvs,
