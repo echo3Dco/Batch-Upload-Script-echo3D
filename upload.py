@@ -15,6 +15,10 @@ FILE_PATH_ARGS_NAME = {'file_image', 'file_video', 'file_image_hologram', 'file_
 SUPPORTED_SOURCES = {'Sketchfab', 'Poly'}
 UPLOAD_URL = 'https://api.echo3D.com/upload'
 
+VIDEO_EXTENSION = {'mp4', 'mov'}
+IMAGE_EXTENSION = {'jpg', 'jpeg', 'png', 'gif', 'tiff', 'bmp', 'svg'}
+MODEL_EXTENSION = {'obj', 'gltf', 'glb', 'fbx', 'usdz', 'stl', 'blend', 'dae', 'sldprt', 'sldasm', 'step'}
+
 class TargetType(Enum):
     IMAGE_TARGET = 0
     GEOLOCATION_TARGET = 1
@@ -33,17 +37,10 @@ def main():
                         help='Your Echo3D security key. Only if enabled through the security page')
     parser.add_argument('email', type=str, 
                         help='Your user email')
-    parser.add_argument('target_type', type=int,
-                        help='A type of target. Options: 0 for IMAGE_TARGET, 1 for GEOLOCATION_TARGET, or 2 for BRICK_TARGET')
-    parser.add_argument('hologram_type', type=int,
-                        help='A type of hologram. Options: 0 for VIDEO_HOLOGRAM, 1 for IMAGE_HOLOGRAM, or 2 for MODEL_HOLOGRAM')
     parser.add_argument('body_args', type=str,
                         help='A csv file containing all other arguments for POST body. Check out the example file template.csv for more details')
 
     args = parser.parse_args()
-    if input_args_error_handle(args) != 0:
-        print('Above errors need to be resolved in order to continue the batch upload process')
-        return -1
     
     data, files = build_body_args(args)
     print("===Body Form-Data Preview===")
@@ -72,8 +69,6 @@ def build_body_args(args):
     data['key'] = args.api_key
     data['secKey'] = args.security_key
     data['email'] = args.email
-    data['target_type'] = args.target_type
-    data['hologram_type'] = args.hologram_type
     
     if not os.path.exists(Path(args.body_args)):
         print("[CSV FILE NOT FOUND] Invalid filepath for body_args which is '%s': No such file or directory" % (args.body_args))
@@ -109,8 +104,29 @@ def build_body_args(args):
 Error handling for missing arguments
 """
 def body_args_error_handle(data, files):
-    target_type = TargetType(data['target_type'])
-    hologram_type = HologramType(data['hologram_type'])
+    # Check if target_type are specified correctly.
+    if 'target_type' not in data:
+        print('[BODY ARGS ERROR] Missing target type. Please check your csv file')
+        return -50
+    else:
+        # Check the validity of hologram_type value
+        try:
+            target_type = TargetType(int(data['target_type']))
+        except ValueError:
+            print('[TARGET TYPE ERROR] Invalid value for target_type. Please check upload documentation for appropriate values!')
+            return -51
+
+    # Check if hologram_type are specified correctly.
+    if 'hologram_type' not in data:
+        print('[BODY ARGS ERROR] Missing hologram type. Please check your csv file')
+        return -52
+    else:
+        # Check the validity of hologram_type value
+        try:
+            hologram_type = HologramType(int(data['hologram_type']))
+        except ValueError:
+            print('[HOLOGRAM TYPE ERROR] Invalid value for hologram_type. Please check upload documentation for appropriate values!')
+            return -53
 
     if target_type == TargetType.IMAGE_TARGET:
         if 'url_image' not in data and 'file_image' not in files:
@@ -173,10 +189,6 @@ def body_args_error_handle(data, files):
             print("[MODEL HOLOGRAM ERROR] You must specify the url argument in your csv file, which is the Sketchfab API URL redirecting to the model. Should be in the form of https://api.sketchfab.com/v3/models/<ID>/download")
             return -29
         
-    if 'edit_type' in data and data['edit_type'] not in {'hologram','target'}:
-        print("[OVERWRITE / EDIT ERROR] You have specified edit_type in your csv file, which must either be hologram or target. If you do not wish to overwrite or edit existing models, please leave it blank.")
-        return -40
-
     return 0
 
 """
@@ -185,35 +197,22 @@ Check if both longitude and latitude are specified for coordinate information
 def check_coordinates(data):
     return 'longitude' in data and 'latitude' in data
 
+def calculate_hologram_type(file_extension):
+    if file_extension in VIDEO_EXTENSION:
+        return HologramType.VIDEO_HOLOGRAM
+    elif file_extension in IMAGE_EXTENSION:
+        return HologramType.IMAGE_HOLOGRAM
+    elif file_extension in MODEL_EXTENSION:
+        return HologramType.MODEL_HOLOGRAM
+    else:
+        print('[FILE EXTENSION ERROR] File extension %s is not supported.' % (file_extension))
+        return -1
+    a
 """
 Invoke Echo3D API for POST request
 """
 def post(data, files):
     return requests.post(UPLOAD_URL, data=data, files=files)
-
-def input_args_error_handle(args):
-    # Check the validity of target_type value
-    try:
-        TargetType(args.target_type)
-    except ValueError as error:
-        print('[TARGET TYPE ERROR] Invalid integer value for target_type. Please check upload documentation for appropriate values!')
-        print_error_message(error)
-        return 1
-
-    # Check the validity of hologram_type value
-    try:
-        HologramType(args.hologram_type)
-    except ValueError as error:
-        print('[HOLOGRAM TYPE ERROR] Invalid integer value for hologram_type. Please check upload documentation for appropriate values!')
-        print_error_message(error)
-        return 2
-
-    return 0
-
-def print_error_message(e):
-    print('\n===Original trace message===')
-    print(e)
-    print()
 
 if __name__ == '__main__':
     main()
