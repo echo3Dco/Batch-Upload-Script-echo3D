@@ -1,9 +1,5 @@
-target_type,2
-url_image,
-file_image,
-text_geolocation,
-longitude,
-latitude,
-url_video,
-asset_file,/Users/lawrence/Desktop/Goat.glb
-file_cvs,
+target_type,asset_file,url_image,url_video,file_image,text_geolocation,longitude,latitude,file_cvs
+2,/path/to/your/file/example1.glb,,,,,,,
+2,/path/to/your/file/example2.obj,,,,,,,
+2,/path/to/your/file/example3.mp4,,,,,,,
+2,/path/to/your/file/example4.png,,,,,,,
